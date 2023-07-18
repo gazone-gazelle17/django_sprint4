@@ -17,11 +17,12 @@ User = get_user_model()
 def index(request):
     posts = Post.objects.annotate(
         comment_count=Count('comments')
-        ).order_by('-pub_date').filter(
+    ).order_by('-pub_date'
+    ).filter(
             is_published=True,
             pub_date__lte=timezone.now(),
             category__is_published=True,
-            )
+    )
     paginator = Paginator(posts, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -44,7 +45,7 @@ def post_detail(request, pk):
         'post': post,
         'comments': post.comments.all(),
         'form': form,
-               }
+    }
     return render(request, 'blog/detail.html', context)
 
 
@@ -84,16 +85,15 @@ class UserListView(ListView):
             return Post.objects.prefetch_related('author',
                                                  'location',
                                                  'category'
-                                                 ).filter(
-                author=author
-                ).order_by('-pub_date').annotate(
-                comment_count=Count('comments'))
+                                                 ).filter(author=author
+            ).order_by('-pub_date').annotate(
+            comment_count=Count('comments'))
         else:
             return Post.objects.prefetch_related(
                 'author',
                 'location',
                 'category'
-                ).filter(author=author,
+            ).filter(author=author,
                          is_published=True,
                          pub_date__lte=timezone.now(),
                          category__is_published=True

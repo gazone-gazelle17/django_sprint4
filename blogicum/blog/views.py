@@ -17,8 +17,7 @@ User = get_user_model()
 def index(request):
     posts = Post.objects.annotate(
         comment_count=Count('comments')
-    ).order_by('-pub_date'
-    ).filter(
+    ).order_by('-pub_date').filter(
             is_published=True,
             pub_date__lte=timezone.now(),
             category__is_published=True,
@@ -85,19 +84,20 @@ class UserListView(ListView):
             return Post.objects.prefetch_related('author',
                                                  'location',
                                                  'category'
-                                                 ).filter(author=author
-            ).order_by('-pub_date').annotate(
-            comment_count=Count('comments'))
+                                                 ).filter(
+                author=author
+                ).order_by('-pub_date'
+                           ).annotate(comment_count=Count('comments'))
         else:
             return Post.objects.prefetch_related(
                 'author',
                 'location',
                 'category'
             ).filter(author=author,
-                         is_published=True,
-                         pub_date__lte=timezone.now(),
-                         category__is_published=True
-                         ).order_by('-pub_date').annotate(
+                     is_published=True,
+                     pub_date__lte=timezone.now(),
+                     category__is_published=True
+                     ).order_by('-pub_date').annotate(
                 comment_count=Count('comments'))
 
     def get_context_data(self, **kwargs):

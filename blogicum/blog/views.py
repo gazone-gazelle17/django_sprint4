@@ -18,9 +18,9 @@ def index(request):
     posts = Post.objects.annotate(
         comment_count=Count('comments')
     ).order_by('-pub_date').filter(
-            is_published=True,
-            pub_date__lte=timezone.now(),
-            category__is_published=True,
+        is_published=True,
+        pub_date__lte=timezone.now(),
+        category__is_published=True,
     )
     paginator = Paginator(posts, 10)
     page_number = request.GET.get('page')
@@ -86,8 +86,8 @@ class UserListView(ListView):
                                                  'category'
                                                  ).filter(
                 author=author
-                ).order_by('-pub_date'
-                           ).annotate(comment_count=Count('comments'))
+            ).order_by('-pub_date'
+                       ).annotate(comment_count=Count('comments'))
         else:
             return Post.objects.prefetch_related(
                 'author',

@@ -225,4 +225,5 @@ def user_profile_update(request):
     else:
         if request.user.is_authenticated:
             user = request.user
-            return render(request, 'blog/user.html', {'form': UpdateUserForm()})
+            return render(request, 'blog/user.html',
+                          {'form': UpdateUserForm()})

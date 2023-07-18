@@ -34,10 +34,10 @@ urlpatterns = [
     path('category/<slug:category_slug>/',
          views.category_posts,
          name='category_posts'),
+    path('profile/edit/',
+         views.user_profile_update,
+         name='edit_profile'),
     path('profile/<username>/',
          views.UserListView.as_view(),
          name='profile'),
-    path('profile/edit/',
-         views.user_profile_update,
-         name='edit_profile')
 ]

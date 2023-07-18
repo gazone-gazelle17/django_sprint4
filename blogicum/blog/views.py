@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 
 from .models import Post, Category, Comment
-from .forms import PostForm, CommentForm
+from .forms import PostForm, CommentForm, UpdateUserForm
 
 User = get_user_model()
 
@@ -73,8 +73,8 @@ class UserListView(ListView):
     model = User
     template_name = 'blog/profile.html'
     context_object_name = 'profile'
-    ordering = ['-pub_date']
     paginate_by = 10
+    form = UpdateUserForm()
 
     def get_queryset(self):
         author = get_object_or_404(User,
@@ -186,13 +186,15 @@ def add_comment(request, post_id):
 def edit_comment(request, post_id, comment_id):
     post = get_object_or_404(Post, id=post_id)
     comment = get_object_or_404(Comment, id=comment_id, post=post)
-    form = CommentForm(request.POST)
+    if comment.author != request.user:
+        return redirect('blog:post_detail', pk=post.id)
+    form = CommentForm(request.POST or None, instance=comment)
     if form.is_valid():
         comment = form.save(commit=False)
         comment.author = request.user
-        comment.post = post
         comment.save()
-    return redirect('blog:post_detail', pk=post.id)
+    return render(request, 'blog/comment.html',
+                  {'form': form, 'comment': comment})
 
 
 @login_required
@@ -204,26 +206,23 @@ def comment_delete(request, post_id, comment_id):
                                 author=request.user)
     if request.method == 'POST':
         comment.delete()
-        return redirect('blog:post_detail', post_id=post.id)
-    form = CommentForm(instance=comment)
-    context = {'form': form}
-    return render(request, 'blog/comment.html', context)
+        return redirect('blog:post_detail', pk=post.id)
+    return render(request, 'blog/comment.html', {'comment': comment})
 
 
 @login_required
 def user_profile_update(request):
-    if request.method == 'POST':
+    if request.method == 'POST' and request.user.is_authenticated:
         username = request.POST['username']
         email = request.POST['email']
         user = request.user
         user.username = username
         user.email = email
+        user.first_name = request.POST['first_name']
+        user.last_name = request.POST['last_name']
         user.save()
         return redirect('blog:index')
     else:
-        user = request.user
-        form_data = {
-            'username': user.username,
-            'email': user.email,
-        }
-    return render(request, 'edit_profile.html', {'form_data': form_data})
+        if request.user.is_authenticated:
+            user = request.user
+            return render(request, 'blog/user.html', {'form': UpdateUserForm()})

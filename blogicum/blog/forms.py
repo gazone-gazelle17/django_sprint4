@@ -1,28 +1,23 @@
 from django import forms
-from django.contrib.auth import get_user_model
 
-from .models import Post, Comment
-
-User = get_user_model()
+from .models import Comment, Post, User
 
 
 class PostForm(forms.ModelForm):
 
     class Meta:
         model = Post
-        exclude = ['author']
+        exclude = ('author',)
 
 
 class CommentForm(forms.ModelForm):
-    text = forms.CharField(
-        widget=forms.Textarea(
-            attrs={'rows': 5, 'cols': 40}
-        )
-    )
 
     class Meta:
         model = Comment
-        exclude = ['author', 'post', 'created_at']
+        fields = ('text',)
+        widgets = {
+            'text': forms.Textarea(attrs={'rows': 5, 'cols': 40})
+        }
 
 
 class UpdateUserForm(forms.ModelForm):

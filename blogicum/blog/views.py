@@ -38,7 +38,7 @@ def post_detail(request, pk):
     context = {
         'post': post,
         'comments': post.comments.all(
-                    ).select_related().order_by('created_at'),
+        ).select_related().order_by('created_at'),
         'form': form,
     }
     return render(request, 'blog/detail.html', context)

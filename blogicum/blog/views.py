@@ -1,18 +1,20 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
-from django.shortcuts import get_object_or_404, render, redirect
-from django.urls import reverse, reverse_lazy
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
-from .forms import PostForm, CommentForm, UpdateUserForm
-from .models import Post, Category, Comment, User
+from .forms import CommentForm, PostForm, UpdateUserForm
+from .models import Category, Comment, Post, User
 from .utils import paginate
 
 
 def index(request):
-    posts = Post.objects.select_related('category').annotate(
+    posts = Post.objects.select_related(
+        'category', 'author', 'location'
+    ).annotate(
         comment_count=Count('comments')
     ).order_by('-pub_date').filter(
         is_published=True,
@@ -28,7 +30,7 @@ def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
     if not request.user.is_authenticated or post.author != request.user:
         post = get_object_or_404(
-            Post.objects.select_related('category'),
+            Post.objects.select_related('category', 'author', 'location'),
             pk=pk,
             pub_date__lte=timezone.now(),
             is_published=True,
@@ -49,7 +51,9 @@ def category_posts(request, category_slug):
         Category,
         slug=category_slug,
         is_published=True)
-    posts = Post.objects.filter(
+    posts = Post.objects.select_related(
+        'category', 'author', 'location'
+        ).filter(
         category=category,
         pub_date__lte=timezone.now(),
         is_published=True,
@@ -67,17 +71,16 @@ class UserListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        author = get_object_or_404(
-            User,
-            username=self.kwargs['username']
+        self.author = get_object_or_404(
+            User, username=self.kwargs['username']
         )
-        if author == self.request.user:
+        if self.author == self.request.user:
             return Post.objects.select_related(
                 'author',
                 'location',
                 'category'
             ).filter(
-                author=author
+                author=self.author
             ).order_by(
                 '-pub_date').annotate(comment_count=Count('comments'))
         else:
@@ -85,7 +88,7 @@ class UserListView(ListView):
                 'author',
                 'location',
                 'category'
-            ).filter(author=author,
+            ).filter(author=self.author,
                      is_published=True,
                      pub_date__lte=timezone.now(),
                      category__is_published=True
@@ -94,10 +97,7 @@ class UserListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['profile'] = get_object_or_404(
-            User,
-            username=self.kwargs['username']
-        )
+        context['profile'] = self.author
         return context
 
 
@@ -111,9 +111,6 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         form.instance.author = self.request.user
         post.save()
         return super().form_valid(form)
-
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse(
@@ -149,7 +146,7 @@ class PostDeleteView(LoginRequiredMixin, DeleteView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
-        return reverse_lazy('blog:index')
+        return reverse('blog:index')
 
 
 @login_required
@@ -189,11 +186,8 @@ def comment_delete(request, post_id, comment_id):
 
 @login_required
 def user_profile_update(request):
-    if request.method == 'POST':
-        form = UpdateUserForm(request.POST, instance=request.user)
-        if form.is_valid():
-            form.save()
-            return redirect('blog:index')
-    else:
-        form = UpdateUserForm()
+    form = UpdateUserForm(request.POST, instance=request.user)
+    if form.is_valid():
+        form.save()
+        return redirect('blog:index')
     return render(request, 'blog/user.html', {'form': form})

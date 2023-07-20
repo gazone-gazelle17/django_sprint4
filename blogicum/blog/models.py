@@ -25,9 +25,12 @@ class Category(AbstractBase):
     slug = models.SlugField(
         unique=True,
         verbose_name='Идентификатор',
-        help_text='Идентификатор страницы для URL; '
-        'разрешены символы латиницы, '
-        'цифры, дефис и подчёркивание.')
+        help_text=(
+            'Идентификатор страницы для URL; '
+            'разрешены символы латиницы, '
+            'цифры, дефис и подчёркивание.'
+        )
+    )
 
     class Meta:
         verbose_name = 'категория'
@@ -46,6 +49,9 @@ class Location(AbstractBase):
 
     def __str__(self):
         return self.name
+
+
+TITLE_LIMIT = 30
 
 
 class Post(AbstractBase):
@@ -86,7 +92,7 @@ class Post(AbstractBase):
         ordering = ['-pub_date']
 
     def __str__(self):
-        return self.title[:30]
+        return self.title[:TITLE_LIMIT]
 
 
 class Comment(models.Model):

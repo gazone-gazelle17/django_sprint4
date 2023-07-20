@@ -53,7 +53,7 @@ def category_posts(request, category_slug):
         is_published=True)
     posts = Post.objects.select_related(
         'category', 'author', 'location'
-        ).filter(
+    ).filter(
         category=category,
         pub_date__lte=timezone.now(),
         is_published=True,

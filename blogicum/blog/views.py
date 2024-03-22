@@ -10,6 +10,8 @@ from .forms import CommentForm, PostForm, UpdateUserForm
 from .models import Category, Comment, Post, User
 from .utils import paginate
 
+NUMBER = 15
+
 
 def index(request):
     posts = Post.objects.select_related(
